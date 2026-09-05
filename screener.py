@@ -2,6 +2,5 @@
 TICKERS = [
     "^JKSE", "TPIA.JK", "BRPT.JK", "CUAN.JK", "BREN.JK", "CDIA.JK",
     "JGLE.JK", "BNBR.JK", "KOTA.JK", "BRMS.JK", "BBCA.JK", "BMRI.JK",
-    "BBRI.JK", "BRIS.JK", "BBNI.JK", "KOTA.JK", "DEWA.JK", "CBRE.HK",
-    "BYAN.JK", "MDIA.JK", "BACH.JK",
+    "BBRI.JK", "BRIS.JK", "BBNI.JK"
 ]
