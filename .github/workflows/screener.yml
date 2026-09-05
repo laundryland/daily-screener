@@ -6,6 +6,9 @@ on:
     - cron: '0 2-9 * * 1-5'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-and-run:
     runs-on: ubuntu-latest
@@ -29,7 +32,12 @@ jobs:
 
     - name: Commit and Push Updated Data
       run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git add data.json
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Auto update data.json" && git push)
+        if git diff --staged --quiet; then
+          echo "Tidak ada perubahan data."
+        else
+          git commit -m "Auto update data.json [skip ci]"
+          git push
+        fi
