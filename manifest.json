@@ -1,24 +1,39 @@
 {
-  "name": "IHSG Screener Pro",
-  "short_name": "Screener Pro",
-  "description": "Screener Saham Volatil IHSG dengan Indikator Harian & Backup Data",
+  "name": "IHSG Stock Screener Pro",
+  "short_name": "Screener",
+  "description": "Aplikasi Screener Saham IHSG dengan Indikator Teknikal, RSI, & Volume Bandarmology",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "orientation": "portrait-primary",
+  "orientation": "portrait",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
+  "lang": "id",
+  "categories": ["finance", "utilities"],
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2422/2422796.png",
+      "src": "icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/2422/2422796.png",
+      "src": "icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
