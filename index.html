@@ -21,14 +21,13 @@
     .control-box { background: #1e293b; padding: 12px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 16px; }
     .form-row { display: flex; gap: 8px; flex-wrap: wrap; }
     select { flex: 1; min-width: 140px; padding: 8px 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; }
-
-    .group-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; }
-    .tab { padding: 6px 14px; background: #1e293b; border-radius: 20px; font-size: 0.8rem; white-space: nowrap; border: 1px solid #334155; color: #94a3b8; cursor: pointer; }
-    .tab.active { background: #0284c7; color: #fff; border-color: #38bdf8; font-weight: bold; }
+    .btn-all { background: #0284c7; color: #fff; font-size: 0.85rem; padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .btn-all:active { opacity: 0.8; }
 
     .card-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
     .card { background: #1e293b; padding: 12px; border-radius: 12px; border: 1px solid #334155; position: relative; }
     
+    /* Kartu IHSG Pojok Kiri Atas */
     .card-ihsg { background: #1e1b4b; border: 1px solid #6366f1; }
     .card-ihsg .ticker { color: #a5b4fc; }
     .card-ihsg .group-tag { background: #312e81; color: #c7d2fe; }
@@ -74,20 +73,17 @@
       <select id="stockPicker" onchange="addSelectedStock()">
         <option value="">+ Pilih & Tampilkan Emiten...</option>
       </select>
+      <button class="btn-all" onclick="tampilkanSemua()">Tampilkan Semua</button>
     </div>
-  </div>
-
-  <div class="group-tabs" id="groupTabs">
-    <div class="tab active" onclick="filterGroup('ALL', this)">Semua Ditampilkan</div>
   </div>
 
   <div class="card-grid" id="stockGrid"></div>
 
   <script>
     let rawData = [];
-    let displayedTickers = JSON.parse(localStorage.getItem('my_watch_list')) || ["IHSG"];
+    let displayedTickers = JSON.parse(localStorage.getItem('my_watch_list_v3')) || ["IHSG"];
     
-    // IHSG Selalu di Depan
+    // Pastikan IHSG Selalu di Depan
     if (!displayedTickers.includes("IHSG")) displayedTickers.unshift("IHSG");
 
     function formatWIB(timeStr) {
@@ -105,7 +101,6 @@
 
     async function loadData() {
       try {
-        // Cuma baca 1 file json ringan, super cepat!
         const res = await fetch('./data.json?v=' + Date.now(), { cache: 'no-store' });
         const data = await res.json();
         
@@ -192,16 +187,26 @@
       const val = picker.value;
       if (val && !displayedTickers.includes(val)) {
         displayedTickers.push(val);
-        localStorage.setItem('my_watch_list', JSON.stringify(displayedTickers));
-        render();
-        populateDropdown();
+        saveAndReload();
       }
+    }
+
+    function tampilkanSemua() {
+      if (rawData.length === 0) return;
+      displayedTickers = rawData.map(s => s.ticker);
+      displayedTickers = displayedTickers.filter(t => t !== 'IHSG');
+      displayedTickers.unshift('IHSG');
+      saveAndReload();
     }
 
     function removeStock(ticker) {
       if (ticker === 'IHSG') return;
       displayedTickers = displayedTickers.filter(t => t !== ticker);
-      localStorage.setItem('my_watch_list', JSON.stringify(displayedTickers));
+      saveAndReload();
+    }
+
+    function saveAndReload() {
+      localStorage.setItem('my_watch_list_v3', JSON.stringify(displayedTickers));
       render();
       populateDropdown();
     }
