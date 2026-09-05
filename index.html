@@ -21,7 +21,7 @@
     .control-box { background: #1e293b; padding: 12px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 16px; }
     .form-row { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
     input, select, button { padding: 8px 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; }
-    input { flex: 1; min-width: 100px; text-transform: uppercase; }
+    input { flex: 1; min-width: 140px; text-transform: uppercase; }
     button { background: #0284c7; color: white; border: none; font-weight: bold; cursor: pointer; }
     button:active { opacity: 0.8; }
     .btn-danger { background: #dc2626; }
@@ -31,10 +31,11 @@
     .tab { padding: 6px 14px; background: #1e293b; border-radius: 20px; font-size: 0.8rem; white-space: nowrap; border: 1px solid #334155; color: #94a3b8; }
     .tab.active { background: #0284c7; color: #fff; border-color: #38bdf8; font-weight: bold; }
 
-    .card-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    /* Layout Kolom Agak Memanjang (Min 220px) */
+    .card-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
     .card { background: #1e293b; padding: 12px; border-radius: 12px; border: 1px solid #334155; position: relative; }
     
-    /* Kartu Khusus Indeks IHSG */
+    /* Kartu Khusus Indeks IHSG (Pojok Kiri Atas) */
     .card-ihsg { background: #1e1b4b; border: 1px solid #6366f1; }
     .card-ihsg .ticker { color: #a5b4fc; }
     .card-ihsg .group-tag { background: #312e81; color: #c7d2fe; }
@@ -55,12 +56,19 @@
     /* Indikator Bulatan Warna */
     .dot-indicator { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-left: 2px; margin-right: 6px; vertical-align: middle; }
     .dot-buy { background-color: #22c55e; box-shadow: 0 0 5px #22c55e; }
-    .dot-neutral { background-color: #f8fafc; box-shadow: 0 0 3px #f8fafc; } /* Bulatan Putih Netral */
+    .dot-neutral { background-color: #f8fafc; box-shadow: 0 0 3px #f8fafc; }
     .dot-sell { background-color: #ef4444; box-shadow: 0 0 5px #ef4444; }
 
     .group-tag { font-size: 0.68rem; color: #38bdf8; background: #0c4a6e; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
-    .stat { font-size: 0.75rem; color: #94a3b8; margin-top: 2px; }
+    .stat { font-size: 0.78rem; color: #94a3b8; margin-top: 3px; }
     .vol-high { color: #facc15; font-weight: bold; }
+
+    /* Box Area Trading (Entry, SL, TP) */
+    .trade-zone { background: #0f172a; padding: 6px 8px; border-radius: 6px; margin-top: 8px; border: 1px solid #334155; font-size: 0.75rem; }
+    .zone-row { display: flex; justify-content: space-between; margin-bottom: 2px; }
+    .txt-entry { color: #38bdf8; font-weight: bold; }
+    .txt-sl { color: #f87171; font-weight: bold; }
+    .txt-tp { color: #4ade80; font-weight: bold; }
 
     .card-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 8px; border-top: 1px solid #334155; }
     .reorder-btns { display: flex; gap: 4px; }
@@ -75,10 +83,10 @@
 
   <div class="control-box">
     <div class="form-row">
-      <input type="text" id="newTicker" placeholder="Tambah Emiten (misal: BBRI)">
+      <input type="text" id="newTicker" placeholder="Cari / Tambah Emiten (mis: BBRI)">
       <select id="newGroup">
+        <option value="Pilihan">Emiten Pilihan</option>
         <option value="Pantauan Harian">Pantauan Harian</option>
-        <option value="Tetap">Emiten Tetap</option>
       </select>
       <button onclick="addStock()">+ Tambah</button>
     </div>
@@ -87,7 +95,7 @@
   <div class="group-tabs" id="groupTabs">
     <div class="tab active" onclick="filterGroup('ALL', this)">Semua</div>
     <div class="tab" onclick="filterGroup('Indeks', this)">🏛️ Indeks IHSG</div>
-    <div class="tab" onclick="filterGroup('Tetap', this)">📌 Emiten Tetap</div>
+    <div class="tab" onclick="filterGroup('Pilihan', this)">⭐ Emiten Pilihan</div>
     <div class="tab" onclick="filterGroup('Pantauan Harian', this)">⚡ Pantauan Harian</div>
   </div>
 
@@ -96,36 +104,30 @@
   <script>
     let rawData = [];
     
-    // Default Emiten Tetap Sesuai Bahasan
-    const DEFAULT_FIXED = ["IHSG", "TPIA", "BRPT", "CUAN", "BREN", "CDIA", "JGLE", "BNBR", "KOTA", "BRMS", "BBCA", "BMRI", "BBRI", "BRIS", "BBNI"];
-    
-    let stockOrder = JSON.parse(localStorage.getItem('stock_order')) || DEFAULT_FIXED;
-    let customGroups = JSON.parse(localStorage.getItem('custom_groups')) || {};
+    // IHSG SELALU PERTAMA di Pojok Kiri Atas
+    let stockOrder = JSON.parse(localStorage.getItem('stock_order_v2')) || ["IHSG"];
+    let customGroups = JSON.parse(localStorage.getItem('custom_groups_v2')) || { "IHSG": "Indeks" };
     let liveFetchedData = {};
     let activeFilter = 'ALL';
 
-    // Set Default Grouping
-    DEFAULT_FIXED.forEach(t => {
-      if (!customGroups[t]) {
-        customGroups[t] = t === "IHSG" ? "Indeks" : "Tetap";
-      }
-    });
+    // Pastikan IHSG selalu ada di urutan paling awal
+    if (!stockOrder.includes("IHSG")) {
+      stockOrder.unshift("IHSG");
+    } else if (stockOrder[0] !== "IHSG") {
+      stockOrder = stockOrder.filter(t => t !== "IHSG");
+      stockOrder.unshift("IHSG");
+    }
+    customGroups["IHSG"] = "Indeks";
 
     function formatWIB(timeStr) {
       if (!timeStr) return "-";
-      if (timeStr.includes("WIB")) return timeStr;
-
       try {
         const date = new Date(timeStr);
         if (isNaN(date.getTime())) return timeStr;
-
         return date.toLocaleString('id-ID', {
           timeZone: 'Asia/Jakarta',
-          day: '2-digit',
-          month: 'long',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+          day: '2-digit', month: 'long', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
         }) + " WIB";
       } catch (e) {
         return timeStr;
@@ -147,6 +149,15 @@
       return Math.round((100 - (100 / (1 + rs))) * 100) / 100;
     }
 
+    function calculateEMA(closes, period = 20) {
+      const k = 2 / (period + 1);
+      let ema = closes[0];
+      for (let i = 1; i < closes.length; i++) {
+        ema = (closes[i] * k) + (ema * (1 - k));
+      }
+      return Math.round(ema * 100) / 100;
+    }
+
     async function fetchLiveStockData(ticker) {
       const yfSymbol = ticker === "IHSG" ? "^JKSE" : `${ticker}.JK`;
       const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yfSymbol}?range=3mo&interval=1d`;
@@ -165,8 +176,7 @@
         if (closes.length < 20) return null;
 
         const lastClose = Math.round(closes[closes.length - 1] * 100) / 100;
-        const sliceCloses = closes.slice(-20);
-        const ma20 = Math.round((sliceCloses.reduce((a, b) => a + b, 0) / 20) * 100) / 100;
+        const ema20 = calculateEMA(closes, 20);
         
         const sliceVols = volumes.slice(-20);
         const volMa20 = sliceVols.reduce((a, b) => a + b, 0) / 20;
@@ -181,27 +191,35 @@
         if (rsi < 35) rsiStatus = "BUY";
         else if (rsi > 70) rsiStatus = "SELL";
 
+        let emaStatus = lastClose > ema20 ? "BUY" : (lastClose < ema20 ? "SELL" : "NEUTRAL");
+
         let signal = "NEUTRAL";
         if (lastClose > res20 && res20 > 0) {
           signal = volRatio >= 1.5 ? "SBR" : "Break R";
         } else if (lastClose < sup20 && sup20 > 0) {
           signal = volRatio >= 1.5 ? "SBS" : "Break S";
-        } else if (rsiStatus === "BUY" || lastClose > ma20) {
+        } else if (rsiStatus === "BUY" || emaStatus === "BUY") {
           signal = "BUY";
-        } else if (rsiStatus === "SELL" || lastClose < ma20) {
+        } else if (rsiStatus === "SELL" || emaStatus === "SELL") {
           signal = "SELL";
         }
+
+        const stopLoss = Math.round((sup20 > 0 ? sup20 * 0.98 : lastClose * 0.97) * 100) / 100;
+        const takeProfit = Math.round((res20 > lastClose ? res20 : lastClose * 1.05) * 100) / 100;
 
         return {
           ticker: ticker,
           price: lastClose,
           rsi: rsi,
           rsi_status: rsiStatus,
-          ma20: ma20,
+          ema20: ema20,
+          ema_status: emaStatus,
           support: Math.round(sup20 * 100) / 100,
           resistance: Math.round(res20 * 100) / 100,
           vol_ratio: volRatio,
-          macd_status: "NEUTRAL",
+          entry: lastClose,
+          stop_loss: stopLoss,
+          take_profit: takeProfit,
           signal: signal
         };
 
@@ -216,17 +234,13 @@
         const res = await fetch('./data.json?v=' + Date.now(), { cache: 'no-store' });
         const data = await res.json();
         
-        const wibTime = formatWIB(data.updated_at);
-        document.getElementById('updateTime').innerText = "Diperbarui: " + wibTime;
-        
+        document.getElementById('updateTime').innerText = "Diperbarui: " + formatWIB(data.updated_at);
         rawData = data.stocks || [];
 
         const missingTickers = stockOrder.filter(t => !rawData.some(s => s.ticker === t));
         for (let ticker of missingTickers) {
           const fetched = await fetchLiveStockData(ticker);
-          if (fetched) {
-            liveFetchedData[ticker] = fetched;
-          }
+          if (fetched) liveFetchedData[ticker] = fetched;
         }
 
         render();
@@ -242,13 +256,13 @@
       let orderedList = [];
       stockOrder.forEach(ticker => {
         let item = rawData.find(s => s.ticker === ticker) || liveFetchedData[ticker] || { 
-          ticker, price: 0, rsi: 0, rsi_status: 'NEUTRAL', ma20: 0, support: 0, resistance: 0, vol_ratio: 1.0, macd_status: 'NEUTRAL', signal: 'NEUTRAL' 
+          ticker, price: 0, rsi: 0, rsi_status: 'NEUTRAL', ema20: 0, ema_status: 'NEUTRAL', support: 0, resistance: 0, vol_ratio: 1.0, entry: 0, stop_loss: 0, take_profit: 0, signal: 'NEUTRAL' 
         };
         orderedList.push(item);
       });
 
       orderedList.forEach((stock, index) => {
-        const group = customGroups[stock.ticker] || 'Pantauan Harian';
+        const group = customGroups[stock.ticker] || 'Pilihan';
         
         if (activeFilter !== 'ALL' && group !== activeFilter) return;
 
@@ -261,13 +275,8 @@
         else if (stock.signal === 'SELL') badgeClass = 'sell';
 
         // Indikator Bulatan Warna
-        let rsiDotClass = 'dot-neutral';
-        if (stock.rsi_status === 'BUY') rsiDotClass = 'dot-buy';
-        else if (stock.rsi_status === 'SELL') rsiDotClass = 'dot-sell';
-
-        let macdDotClass = 'dot-neutral';
-        if (stock.macd_status === 'BUY') macdDotClass = 'dot-buy';
-        else if (stock.macd_status === 'SELL') macdDotClass = 'dot-sell';
+        let rsiDotClass = stock.rsi_status === 'BUY' ? 'dot-buy' : (stock.rsi_status === 'SELL' ? 'dot-sell' : 'dot-neutral');
+        let emaDotClass = stock.ema_status === 'BUY' ? 'dot-buy' : (stock.ema_status === 'SELL' ? 'dot-sell' : 'dot-neutral');
 
         const isVolHigh = stock.vol_ratio >= 1.5;
         const volClass = isVolHigh ? 'vol-high' : '';
@@ -285,16 +294,24 @@
           </div>
           <span class="group-tag">${group}</span>
           <div class="price">Rp ${Number(stock.price).toLocaleString('id-ID')}</div>
+          
           <div class="stat">
-            RSI: <span class="dot-indicator ${rsiDotClass}"></span>
-            MACD: <span class="dot-indicator ${macdDotClass}"></span>
+            RSI: <span class="dot-indicator ${rsiDotClass}"></span> (${stock.rsi}) | 
+            EMA: <span class="dot-indicator ${emaDotClass}"></span> (${stock.ema20})
           </div>
-          <div class="stat">S: ${stock.support} | R: ${stock.resistance}</div>
-          <div class="stat ${volClass}">Vol: ${volIcon}${stock.vol_ratio}x Rerata</div>
+          <div class="stat">SND: S ${stock.support} | R ${stock.resistance}</div>
+          <div class="stat ${volClass}">VR: ${volIcon}${stock.vol_ratio}x Rerata</div>
+
+          <!-- Area Batasan Trading -->
+          <div class="trade-zone">
+            <div class="zone-row"><span>Entry Masuk:</span> <span class="txt-entry">${stock.entry}</span></div>
+            <div class="zone-row"><span>Stop Loss:</span> <span class="txt-sl">${stock.stop_loss}</span></div>
+            <div class="zone-row"><span>Cut Profit (TP):</span> <span class="txt-tp">${stock.take_profit}</span></div>
+          </div>
 
           <div class="card-actions">
             <div class="reorder-btns">
-              <button class="btn-action" onclick="moveStock(${index}, -1)">▲</button>
+              ${!isIhsg ? `<button class="btn-action" onclick="moveStock(${index}, -1)">▲</button>` : ''}
               <button class="btn-action" onclick="moveStock(${index}, 1)">▼</button>
             </div>
             ${!isIhsg ? `<button class="btn-action btn-danger" onclick="removeStock('${stock.ticker}')">Hapus</button>` : '<span></span>'}
@@ -309,7 +326,7 @@
       const groupSelect = document.getElementById('newGroup');
       let ticker = input.value.trim().toUpperCase();
 
-      if (!ticker) return;
+      if (!ticker || ticker === 'IHSG') return;
 
       if (!stockOrder.includes(ticker)) {
         stockOrder.push(ticker);
@@ -340,7 +357,8 @@
 
     function moveStock(index, direction) {
       const newIndex = index + direction;
-      if (newIndex < 0 || newIndex >= stockOrder.length) return;
+      // Jangan izinkan emiten lain menggeser posisi IHSG di index 0
+      if (newIndex <= 0 || newIndex >= stockOrder.length) return;
       
       const temp = stockOrder[index];
       stockOrder[index] = stockOrder[newIndex];
@@ -358,8 +376,8 @@
     }
 
     function saveState() {
-      localStorage.setItem('stock_order', JSON.stringify(stockOrder));
-      localStorage.setItem('custom_groups', JSON.stringify(customGroups));
+      localStorage.setItem('stock_order_v2', JSON.stringify(stockOrder));
+      localStorage.setItem('custom_groups_v2', JSON.stringify(customGroups));
     }
 
     if ('serviceWorker' in navigator) {
