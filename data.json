@@ -1,12 +1,12 @@
 {
-    "updated_at": "2026-09-05 16:00:00",
+    "updated_at": "2026-09-05 10:00:22",
     "stocks": [
         {
             "ticker": "IHSG",
             "price": 6636.48,
             "rsi": 71.89,
             "rsi_status": "SELL",
-            "ema20": 6480.12,
+            "ema20": 6474.0,
             "ema_status": "BUY",
             "support": 6230.1,
             "resistance": 6681.84,
