@@ -22,18 +22,28 @@
     .form-row { display: flex; gap: 8px; flex-wrap: wrap; }
     select { flex: 1; min-width: 140px; padding: 8px 12px; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; font-size: 0.85rem; }
     .btn-all { background: #0284c7; color: #fff; font-size: 0.85rem; padding: 8px 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
-    .btn-all:active { opacity: 0.8; }
 
-    .card-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+    .card-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
     .card { background: #1e293b; padding: 12px; border-radius: 12px; border: 1px solid #334155; position: relative; }
     
-    /* Kartu IHSG Pojok Kiri Atas */
     .card-ihsg { background: #1e1b4b; border: 1px solid #6366f1; }
     .card-ihsg .ticker { color: #a5b4fc; }
-    .card-ihsg .group-tag { background: #312e81; color: #c7d2fe; }
 
     .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .header-left { display: flex; align-items: center; gap: 6px; }
     .ticker { font-weight: bold; font-size: 1.1rem; color: #fff; }
+
+    .summary-boxes { display: flex; align-items: center; gap: 3px; }
+    .mini-box { width: 10px; height: 10px; border-radius: 2px; }
+    .box-white { background-color: #ffffff; }
+    .box-orange { background-color: #f97316; }
+    .box-red { background-color: #ef4444; }
+    .box-green { background-color: #22c55e; }
+    
+    .percent-tag { font-size: 0.7rem; font-weight: bold; margin-left: 2px; }
+    .txt-green { color: #22c55e; }
+    .txt-red { color: #ef4444; }
+
     .price { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; color: #f1f5f9; }
     
     .badge { padding: 3px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold; }
@@ -45,12 +55,7 @@
     .sell { background: #991b1b; color: #fca5a5; }
     .neutral { background: #334155; color: #94a3b8; }
 
-    .dot-indicator { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-left: 2px; margin-right: 6px; vertical-align: middle; }
-    .dot-buy { background-color: #22c55e; box-shadow: 0 0 5px #22c55e; }
-    .dot-neutral { background-color: #f8fafc; box-shadow: 0 0 3px #f8fafc; }
-    .dot-sell { background-color: #ef4444; box-shadow: 0 0 5px #ef4444; }
-
-    .group-tag { font-size: 0.68rem; color: #38bdf8; background: #0c4a6e; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
+    .group-tag { font-size: 0.68rem; color: #38bdf8; background: #0c4a6e; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-bottom: 6px; font-weight: 500; }
     .stat { font-size: 0.78rem; color: #94a3b8; margin-top: 3px; }
     .vol-high { color: #facc15; font-weight: bold; }
 
@@ -81,9 +86,8 @@
 
   <script>
     let rawData = [];
-    let displayedTickers = JSON.parse(localStorage.getItem('my_watch_list_v3')) || ["IHSG"];
+    let displayedTickers = JSON.parse(localStorage.getItem('my_watch_list_v5')) || ["IHSG"];
     
-    // Pastikan IHSG Selalu di Depan
     if (!displayedTickers.includes("IHSG")) displayedTickers.unshift("IHSG");
 
     function formatWIB(timeStr) {
@@ -122,7 +126,7 @@
         if (stock.ticker !== 'IHSG' && !displayedTickers.includes(stock.ticker)) {
           const opt = document.createElement('option');
           opt.value = stock.ticker;
-          opt.innerText = stock.ticker;
+          opt.innerText = `${stock.ticker} [${stock.sector || 'Lainnya'}]`;
           picker.appendChild(opt);
         }
       });
@@ -144,40 +148,63 @@
         else if (stock.signal === 'BUY') badgeClass = 'buy';
         else if (stock.signal === 'SELL') badgeClass = 'sell';
 
-        let rsiDotClass = stock.rsi_status === 'BUY' ? 'dot-buy' : (stock.rsi_status === 'SELL' ? 'dot-sell' : 'dot-neutral');
-        let emaDotClass = stock.ema_status === 'BUY' ? 'dot-buy' : (stock.ema_status === 'SELL' ? 'dot-sell' : 'dot-neutral');
-
         const isVolHigh = stock.vol_ratio >= 1.5;
         const volClass = isVolHigh ? 'vol-high' : '';
         const volIcon = isVolHigh ? '⚡ ' : '';
 
         const isIhsg = stock.ticker === 'IHSG';
 
+        let box3Color = stock.buy_percent >= 50 ? 'box-green' : 'box-red';
+        let box4Color = stock.buy_percent >= 75 ? 'box-green' : (stock.sell_percent >= 75 ? 'box-red' : 'box-white');
+        
+        let percentDisplay = stock.buy_percent >= stock.sell_percent 
+          ? `<span class="percent-tag txt-green">${stock.buy_percent}%</span>` 
+          : `<span class="percent-tag txt-red">${stock.sell_percent}%</span>`;
+
         const card = document.createElement('div');
         card.className = isIhsg ? 'card card-ihsg' : 'card';
-        card.innerHTML = `
+
+        let htmlContent = `
           <div class="card-header">
-            <span class="ticker">${stock.ticker}</span>
+            <div class="header-left">
+              <span class="ticker">${stock.ticker}</span>
+              <div class="summary-boxes">
+                <div class="mini-box box-white" title="Netral"></div>
+                <div class="mini-box box-orange" title="Sideways"></div>
+                <div class="mini-box ${box3Color}" title="Buy/Sell"></div>
+                <div class="mini-box ${box4Color}" title="Strong Buy/Sell"></div>
+                ${percentDisplay}
+              </div>
+            </div>
             <span class="badge ${badgeClass}">${stock.signal}</span>
           </div>
-          <span class="group-tag">${isIhsg ? 'Indeks Utama' : 'Pilihan'}</span>
+          <span class="group-tag">🏷️ ${stock.sector || 'Lainnya'}</span>
           <div class="price">Rp ${Number(stock.price).toLocaleString('id-ID')}</div>
           
-          <div class="stat">
-            RSI: <span class="dot-indicator ${rsiDotClass}"></span> (${stock.rsi}) | 
-            EMA: <span class="dot-indicator ${emaDotClass}"></span> (${stock.ema20})
-          </div>
+          <div class="stat">RSI: ${stock.rsi} | EMA20: ${stock.ema20}</div>
           <div class="stat">SND: S ${stock.support} | R ${stock.resistance}</div>
           <div class="stat ${volClass}">VR: ${volIcon}${stock.vol_ratio}x Rerata</div>
-
-          <div class="trade-zone">
-            <div class="zone-row"><span>Entry Masuk:</span> <span class="txt-entry">${stock.entry}</span></div>
-            <div class="zone-row"><span>Stop Loss:</span> <span class="txt-sl">${stock.stop_loss}</span></div>
-            <div class="zone-row"><span>Cut Profit (TP):</span> <span class="txt-tp">${stock.take_profit}</span></div>
-          </div>
-
-          ${!isIhsg ? `<div style="text-align:right; margin-top:8px;"><button onclick="removeStock('${stock.ticker}')" style="background:#dc2626; border:none; color:#fff; font-size:0.7rem; padding:3px 8px; border-radius:4px; cursor:pointer;">Sembunyikan</button></div>` : ''}
         `;
+
+        if (isIhsg) {
+          htmlContent += `
+            <div class="stat">MACD: ${stock.macd} | Signal: ${stock.macd_signal}</div>
+            <div class="stat">Stoch %K: ${stock.stoch_k} | %D: ${stock.stoch_d}</div>
+          `;
+        } else {
+          htmlContent += `
+            <div class="trade-zone">
+              <div class="zone-row"><span>Entry Masuk:</span> <span class="txt-entry">${stock.entry}</span></div>
+              <div class="zone-row"><span>Stop Loss:</span> <span class="txt-sl">${stock.stop_loss}</span></div>
+              <div class="zone-row"><span>Cut Profit (TP):</span> <span class="txt-tp">${stock.take_profit}</span></div>
+            </div>
+            <div style="text-align:right; margin-top:8px;">
+              <button onclick="removeStock('${stock.ticker}')" style="background:#dc2626; border:none; color:#fff; font-size:0.7rem; padding:3px 8px; border-radius:4px; cursor:pointer;">Sembunyikan</button>
+            </div>
+          `;
+        }
+
+        card.innerHTML = htmlContent;
         grid.appendChild(card);
       });
     }
@@ -206,7 +233,7 @@
     }
 
     function saveAndReload() {
-      localStorage.setItem('my_watch_list_v3', JSON.stringify(displayedTickers));
+      localStorage.setItem('my_watch_list_v5', JSON.stringify(displayedTickers));
       render();
       populateDropdown();
     }
